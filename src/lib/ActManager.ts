@@ -237,8 +237,8 @@ export class ActManager {
 
         if (this.ganeshaAura && this.ganeshaAura.visible) {
             this.ganeshaAura.traverse(child => {
-                if (child.isMesh && (child.material as THREE.ShaderMaterial).isShaderMaterial) {
-                    (child.material as THREE.ShaderMaterial).uniforms.u_time.value = elapsedTime;
+                if (child instanceof THREE.Mesh && child.material instanceof THREE.ShaderMaterial) {
+                    child.material.uniforms.u_time.value = elapsedTime;
                 }
             });
         }
