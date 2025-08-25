@@ -54,12 +54,8 @@ export class ActManager {
     }
 
     private setupScene() {
-        // ### START OF THE FIX ###
-        // We call the method directly on the object to preserve the 'this' context.
-        // We can still destructure properties like `scene` safely.
         const { scene } = this.sceneManager;
         this.sceneManager.setBackground(this.assets.environmentMap);
-        // ### END OF THE FIX ###
 
         scene.add(new THREE.AmbientLight(0xffffff, 0.1));
         scene.add(new THREE.PointLight(0xFFD700, 2, 500));
@@ -76,12 +72,17 @@ export class ActManager {
         gsap.to(this.sceneManager.camera.position, { duration: 10, z: 40, y: 10, ease: 'power2.inOut' });
         window.addEventListener('mousedown', this.handleGenesisHold);
         window.addEventListener('mouseup', this.handleGenesisRelease);
-            window.addEventListener('mousedown', () => {
-                this.bgMusic.play().catch(e => {
+        const playBtn = document.getElementById('play-music-btn');
+        if (playBtn) {
+            playBtn.addEventListener('click', () => {
+                this.bgMusic.play().then(() => {
+                    playBtn.style.display = 'none';
+                }).catch(e => {
                     console.error("Audio playback failed.", e);
                     alert("Unable to play background music. Please check your browser settings.");
                 });
             });
+        }
     }
 
     private genesisTimeline?: gsap.core.Tween;
@@ -104,11 +105,27 @@ export class ActManager {
         window.removeEventListener('mouseup', this.handleGenesisRelease);
         this.uiOverlay.classList.add('hidden');
         const { camera, controls } = this.sceneManager;
+
+        // ### START OF THE FIX ###
         gsap.timeline()
-          .to((this.genesisParticles.material as THREE.ShaderMaterial).uniforms.u_progress, { value: 1.1, duration: 2, onComplete: () => this.genesisParticles.visible = false })
+          .to((this.genesisParticles.material as THREE.ShaderMaterial).uniforms.u_progress, { 
+              value: 1.1, 
+              duration: 2, 
+              // Added curly braces to ensure a void return type
+              onComplete: () => { this.genesisParticles.visible = false; } 
+            })
           .to(this.assets.ganeshaModel.scale, { duration: 4, x: 1, y: 1, z: 1, ease: 'elastic.out(1, 0.5)' }, "-=1.5")
           .to(this.assets.ganeshaModel.position, { duration: 4, y: 0, ease: 'power2.out' }, "<")
-          .to(camera.position, { duration: 3, x: 0, y: 2, z: 15, ease: 'power2.inOut', onUpdate: function() { controls.target.set(0,2,0); } }, "<")
+          .to(camera.position, { 
+              duration: 3, 
+              x: 0, 
+              y: 2, 
+              z: 15, 
+              ease: 'power2.inOut', 
+              // Added curly braces to ensure a void return type
+              onUpdate: () => { controls.target.set(0,2,0); }
+            }, "<")
+        // ### END OF THE FIX ###
           .add(() => {
               this.uiTitle.innerText = "Act II: The Offering of Light";
               this.uiSubtitle.innerText = "Present your celestial offerings.";
@@ -174,9 +191,9 @@ export class ActManager {
                 scene.add(petals);
                 for(let i=0; i < petalCount; i++) {
                     const i3 = i * 3;
-                    gsap.to(posArray, { duration: 3 + Math.random() * 2, [i3]: posArray[i3] + (Math.random()-0.5)*4, [i3+1]: posArray[i3+1] + Math.random()*3, [i3+2]: posArray[i3+2] + (Math.random()-0.5)*4, ease: 'power2.out', onUpdate: () => geometry.attributes.position.needsUpdate = true });
+                    gsap.to(posArray, { duration: 3 + Math.random() * 2, [i3]: posArray[i3] + (Math.random()-0.5)*4, [i3+1]: posArray[i3+1] + Math.random()*3, [i3+2]: posArray[i3+2] + (Math.random()-0.5)*4, ease: 'power2.out', onUpdate: () => { geometry.attributes.position.needsUpdate = true; } });
                 }
-                gsap.to(material, { duration: 4, opacity: 0, ease: 'power1.in', onComplete: () => scene.remove(petals)});
+                gsap.to(material, { duration: 4, opacity: 0, ease: 'power1.in', onComplete: () => { scene.remove(petals); }});
                 return;
             default:
                 return;
@@ -187,7 +204,7 @@ export class ActManager {
         const streamMaterial = new THREE.PointsMaterial({ color, map: texture, blending: THREE.AdditiveBlending, transparent: true, size: 0.5, opacity: 0 });
         const stream = new THREE.Points(streamGeometry, streamMaterial);
         scene.add(stream);
-        gsap.to(streamMaterial, { duration: 1.5, opacity: 1, size: 0.2, ease: 'power2.out', onComplete: () => gsap.to(streamMaterial, { duration: 1, opacity: 0, onComplete: () => scene.remove(stream) }) });
+        gsap.to(streamMaterial, { duration: 1.5, opacity: 1, size: 0.2, ease: 'power2.out', onComplete: () => { gsap.to(streamMaterial, { duration: 1, opacity: 0, onComplete: () => { scene.remove(stream); } }); } });
     }
     
     // --- ACT III ---
